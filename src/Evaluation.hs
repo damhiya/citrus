@@ -17,8 +17,8 @@ data Value
   | Int Integer
   | Str String
   | Pure Value
-  | GetLine S.Var S.Term
-  | PutStr Value S.Var S.Term
+  | GetLine [(Env, S.Var, S.Term)]
+  | PutStr String [(Env, S.Var, S.Term)]
 
 type Env = [(S.Var, Value)]
 
@@ -33,6 +33,7 @@ data EvalError
   | ErrSumRec
   | ErrLetRec
   | ErrApp
+  | ErrPutStr
   | ErrBind
   | ErrIntEq
   | ErrIntLe
@@ -129,16 +130,18 @@ eval env (S.Str (S.StrLit s)) = Right (Str s)
 eval env (S.IO (S.Pure t)) = do
   v <- eval env t
   Right (Pure v)
-eval env (S.IO (S.GetLine x t)) = Right (GetLine x t)
+eval env (S.IO (S.GetLine x t)) = Right (GetLine [(env, x, t)])
 eval env (S.IO (S.PutStr t1 x t2)) = do
   v1 <- eval env t1
-  Right (PutStr v1 x t2)
+  case v1 of
+    Str s -> Right (PutStr s [(env, x, t2)])
+    _ -> Left ErrPutStr
 eval env (S.IO (S.Bind t0 x t)) = do
   v0 <- eval env t0
   case v0 of
     Pure v -> eval ((x,v):env) t
-    GetLine y t1 -> Right (GetLine y (S.IO (S.Bind t1 x t)))
-    PutStr v1 y t2 -> Right (PutStr v1 y (S.IO (S.Bind t2 x t)))
+    GetLine ks -> Right (GetLine (ks ++ [(env, x, t)]))
+    PutStr v ks -> Right (PutStr v (ks ++ [(env, x, t)]))
     _ -> Left ErrBind
 eval env (S.PrimOp pt) = primop pt
   where

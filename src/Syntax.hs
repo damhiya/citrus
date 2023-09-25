@@ -48,10 +48,15 @@ data StrF t
   = StrLit String
   deriving Show
 
+data IOPrimOp t
+  = GetLine
+  | GetInt
+  | PutStr t
+  deriving Show
+
 data IOF t
   = Pure t
-  | GetLine
-  | PutStr t
+  | PrimIO (IOPrimOp t)
   | Bind t Var t
   deriving Show
 

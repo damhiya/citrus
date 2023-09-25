@@ -5,6 +5,12 @@ module Evaluation where
 import Prelude hiding (Bool(..))
 import Syntax qualified as S
 
+data IOPrimOp
+  = GetLine
+  | GetInt
+  | PutStr String
+  deriving Show
+
 data Value
   = Tt
   | True
@@ -17,8 +23,7 @@ data Value
   | Int Integer
   | Str String
   | Pure Value
-  | GetLine [(Env, S.Var, S.Term)]
-  | PutStr String [(Env, S.Var, S.Term)]
+  | IOs IOPrimOp [(Env, S.Var, S.Term)]
   deriving Show
 
 type Env = [(S.Var, Value)]
@@ -132,18 +137,18 @@ eval env (S.Str (S.StrLit s)) = Right (Str s)
 eval env (S.IO (S.Pure t)) = do
   v <- eval env t
   Right (Pure v)
-eval env (S.IO S.GetLine) = Right (GetLine [])
-eval env (S.IO (S.PutStr t)) = do
+eval env (S.IO (S.PrimIO S.GetLine)) = Right (IOs GetLine [])
+eval env (S.IO (S.PrimIO S.GetInt)) = Right (IOs GetInt [])
+eval env (S.IO (S.PrimIO (S.PutStr t))) = do
   v <- eval env t
   case v of
-    Str s -> Right (PutStr s [])
+    Str s -> Right (IOs (PutStr s) [])
     _ -> Left ErrPutStr
 eval env (S.IO (S.Bind t0 x t)) = do
   v0 <- eval env t0
   case v0 of
     Pure v -> eval ((x,v):env) t
-    GetLine ks -> Right (GetLine (ks ++ [(env, x, t)]))
-    PutStr v ks -> Right (PutStr v (ks ++ [(env, x, t)]))
+    IOs op ks -> Right (IOs op (ks ++ [(env, x, t)]))
     _ -> Left ErrBind
 eval env (S.PrimOp pt) = primop pt
   where

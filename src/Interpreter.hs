@@ -3,16 +3,19 @@ module Interpreter where
 import Syntax qualified as S
 import Evaluation qualified as E
 
-interpret :: E.Env -> S.Term -> IO (E.Value)
+interpret :: E.Env -> S.Term -> IO E.Value
 interpret = \env t ->
   case E.eval env t of
-    Right (E.GetLine ks) -> do
+    Right (E.Pure v) -> pure v
+    Right (E.IOs E.GetLine ks) -> do
       s <- getLine
       go (E.Str s) ks
-    Right (E.PutStr s ks) -> do
+    Right (E.IOs E.GetInt ks) -> do
+      n <- readLn
+      go (E.Int n) ks
+    Right (E.IOs (E.PutStr s) ks) -> do
       _ <- putStr s
       go E.Tt ks
-    Right (E.Pure v) -> pure v
     Right _ -> error "interpreter error : no IO"
     Left e  -> error ("eval error : " ++ show e)
   where

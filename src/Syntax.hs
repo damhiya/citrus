@@ -41,8 +41,8 @@ data StrF t
 
 data IOF t
   = Pure t
-  | GetLine Var t
-  | PutStr t Var t
+  | GetLine
+  | PutStr t
   | Bind t Var t
 
 data PrimOpF t

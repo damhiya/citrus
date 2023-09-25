@@ -130,11 +130,11 @@ eval env (S.Str (S.StrLit s)) = Right (Str s)
 eval env (S.IO (S.Pure t)) = do
   v <- eval env t
   Right (Pure v)
-eval env (S.IO (S.GetLine x t)) = Right (GetLine [(env, x, t)])
-eval env (S.IO (S.PutStr t1 x t2)) = do
-  v1 <- eval env t1
-  case v1 of
-    Str s -> Right (PutStr s [(env, x, t2)])
+eval env (S.IO S.GetLine) = Right (GetLine [])
+eval env (S.IO (S.PutStr t)) = do
+  v <- eval env t
+  case v of
+    Str s -> Right (PutStr s [])
     _ -> Left ErrPutStr
 eval env (S.IO (S.Bind t0 x t)) = do
   v0 <- eval env t0

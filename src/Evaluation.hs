@@ -19,6 +19,7 @@ data Value
   | Pure Value
   | GetLine [(Env, S.Var, S.Term)]
   | PutStr String [(Env, S.Var, S.Term)]
+  deriving Show
 
 type Env = [(S.Var, Value)]
 
@@ -44,6 +45,7 @@ data EvalError
   | ErrIntMod
   | ErrIntToStr
   | ErrAppendStr
+  deriving Show
 
 applyDecls :: [S.Decl] -> Env -> Env
 applyDecls decls env

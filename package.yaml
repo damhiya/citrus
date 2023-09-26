@@ -1,0 +1,28 @@
+name: citrus
+version: 0.1.0.0
+synopsis: citrus
+description: citrus
+category: LambdaCalculus
+github: damhiya/citrus
+author: damhiya
+maintainer: damhiya@gmail.com
+copyright: (c) 2022 SoonWon Moon
+license: BSD-3-Clause
+license-file: LICENSE
+extra-source-files: CHANGELOG.md
+
+# common settings
+ghc-options: -Wall -Wno-unused-matches
+language: GHC2021
+default-extensions:
+  - OverloadedStrings
+  - LambdaCase
+dependencies:
+  - base >=4.14 && <5.0
+  - text >= 2.0
+
+executables:
+  citrus:
+    source-dirs: src
+    main: Main.hs
+    dependencies: []

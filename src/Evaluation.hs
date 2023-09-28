@@ -5,7 +5,7 @@ module Evaluation where
 import Prelude hiding (Bool(..))
 import Syntax qualified as S
 
-data IOPrimOp
+data PrimIO
   = GetLine
   | GetInt
   | PutStr String
@@ -23,14 +23,14 @@ data Value
   | Int Integer
   | Str String
   | Pure Value
-  | IOs IOPrimOp [(Env, S.Var, S.Term)]
+  | IOs PrimIO [(Env, S.Var, S.Term)]
   deriving Show
 
 type Env = [(S.Var, Value)]
 
 data EvalError
   = ErrScope
-  | ErrVoidRec
+  | ErrEmptyRec
   | ErrUnitRec
   | ErrBoolRec
   | ErrFst
@@ -57,7 +57,7 @@ applyDecls decls env
   = [(f, LamRec env decls (S.Decl f xs t)) | S.Decl f xs t <- decls] ++ env
 
 lamExpand :: [S.Var] -> S.Term -> S.Term
-lamExpand xs t = foldr (\x t -> S.Fun (S.Lam x t)) t xs
+lamExpand xs t0 = foldr (\x t -> S.Lam x t) t0 xs
 
 eval :: Env -> S.Term -> Either EvalError Value
 eval env (S.Var x) =
@@ -67,61 +67,61 @@ eval env (S.Var x) =
 eval env (S.Let (S.Decl f xs t1) t2) = do
   v <- eval env (lamExpand xs t1)
   eval ((f,v):env) t2
-eval env (S.Void (S.VoidRec t0)) = do
+eval env (S.EmptyRec t0) = do
   _ <- eval env t0
-  Left ErrVoidRec
-eval env (S.Unit (S.Tt)) = Right Tt
-eval env (S.Unit (S.UnitRec t0 t1)) = do
+  Left ErrEmptyRec
+eval env (S.Tt) = Right Tt
+eval env (S.UnitRec t0 t1) = do
   v0 <- eval env t0
   case v0 of
     Tt -> eval env t1
     _  -> Left ErrUnitRec
-eval env (S.Bool (S.True)) = Right True
-eval env (S.Bool (S.False)) = Right False
-eval env (S.Bool (S.BoolRec t0 t1 t2)) = do
+eval env (S.True) = Right True
+eval env (S.False) = Right False
+eval env (S.BoolRec t0 t1 t2) = do
   v0 <- eval env t0
   case v0 of
     True -> eval env t1
     False -> eval env t2
     _ -> Left ErrBoolRec
-eval env (S.Prod (S.Pair t1 t2)) = do
+eval env (S.Pair t1 t2) = do
   v1 <- eval env t1
   v2 <- eval env t2
   Right (Pair v1 v2)
-eval env (S.Prod (S.Fst t0)) = do
+eval env (S.Fst t0) = do
   v0 <- eval env t0
   case v0 of
     Pair v1 v2 -> Right v1
     _ -> Left ErrFst
-eval env (S.Prod (S.Snd t0)) = do
+eval env (S.Snd t0) = do
   v0 <- eval env t0
   case v0 of
     Pair v1 v2 -> Right v2
     _ -> Left ErrSnd
-eval env (S.Prod (S.ProdRec t0 x1 x2 t)) = do
+eval env (S.ProdRec t0 x1 x2 t) = do
   v0 <- eval env t0
   case v0 of
     Pair v1 v2 -> eval ((x2, v2):(x1, v1):env) t
     _ -> Left ErrProdRec
-eval env (S.Sum (S.Inl t)) = do
+eval env (S.Inl t) = do
   v <- eval env t
   Right (Inl v)
-eval env (S.Sum (S.Inr t)) = do
+eval env (S.Inr t) = do
   v <- eval env t
   Right (Inr v)
-eval env (S.Sum (S.SumRec t0 x t1 y t2)) = do
+eval env (S.SumRec t0 x t1 y t2) = do
   v0 <- eval env t0
   case v0 of
     Inl vx -> eval ((x,vx):env) t1
     Inr vy -> eval ((y,vy):env) t2
     _ -> Left ErrSumRec
-eval env (S.Fun (S.Lam x t)) =
+eval env (S.Lam x t) =
   Right (Lam env x t)
-eval env (S.Fun (S.LetRec decls t)) =
+eval env (S.LetRec decls t) =
   if all (\(S.Decl _ xs _) -> not (null xs)) decls
      then eval (applyDecls decls env) t
      else Left ErrLetRec
-eval env (S.Fun (S.App t0 t1)) = do
+eval env (S.App t0 t1) = do
   v0 <- eval env t0
   case v0 of
     Lam env' x t -> do
@@ -132,19 +132,19 @@ eval env (S.Fun (S.App t0 t1)) = do
       v <- eval env t1
       eval ((x,v) : applyDecls decls env') (lamExpand xs t)
     _ -> Left ErrApp
-eval env (S.Int (S.IntLit n)) = Right (Int n)
-eval env (S.Str (S.StrLit s)) = Right (Str s)
-eval env (S.IO (S.Pure t)) = do
+eval env (S.IntLit n) = Right (Int n)
+eval env (S.StrLit s) = Right (Str s)
+eval env (S.Pure t) = do
   v <- eval env t
   Right (Pure v)
-eval env (S.IO (S.PrimIO S.GetLine)) = Right (IOs GetLine [])
-eval env (S.IO (S.PrimIO S.GetInt)) = Right (IOs GetInt [])
-eval env (S.IO (S.PrimIO (S.PutStr t))) = do
+eval env (S.PrimIO S.GetLine) = Right (IOs GetLine [])
+eval env (S.PrimIO S.GetInt) = Right (IOs GetInt [])
+eval env (S.PrimIO (S.PutStr t)) = do
   v <- eval env t
   case v of
     Str s -> Right (IOs (PutStr s) [])
     _ -> Left ErrPutStr
-eval env (S.IO (S.Bind t0 x t)) = do
+eval env (S.Bind t0 x t) = do
   v0 <- eval env t0
   case v0 of
     Pure v -> eval ((x,v):env) t

@@ -3,4 +3,6 @@ module Main where
 import Examples
 
 main :: IO ()
-main = putStrLn "citrus"
+main = do
+  _ <- go2
+  pure ()

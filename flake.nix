@@ -33,6 +33,10 @@
                   inherit index-state;
                   version = "0.35.0";
                 };
+                stylish-haskell = {
+                  inherit index-state;
+                  version = "0.14.4.0";
+                };
               };
             };
           })

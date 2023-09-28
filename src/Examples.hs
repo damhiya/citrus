@@ -1,9 +1,9 @@
 module Examples where
 
-import Prelude hiding (Bool(..))
-import Syntax
-import Evaluation qualified as E
+import Evaluation  qualified as E
 import Interpreter
+import Prelude     hiding (Bool (..))
+import Syntax
 
 ex1 :: Term
 ex1 =

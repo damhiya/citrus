@@ -1,7 +1,7 @@
 module Interpreter where
 
-import Syntax qualified as S
 import Evaluation qualified as E
+import Syntax     qualified as S
 
 interpret :: E.Env -> S.Term -> IO E.Value
 interpret = \env t ->

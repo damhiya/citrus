@@ -2,8 +2,8 @@
 
 module Evaluation where
 
-import Prelude hiding (Bool(..))
-import Syntax qualified as S
+import Prelude hiding (Bool (..))
+import Syntax  qualified as S
 
 data PrimIO
   = GetLine
@@ -81,9 +81,9 @@ eval env (S.False) = Right False
 eval env (S.BoolRec t0 t1 t2) = do
   v0 <- eval env t0
   case v0 of
-    True -> eval env t1
+    True  -> eval env t1
     False -> eval env t2
-    _ -> Left ErrBoolRec
+    _     -> Left ErrBoolRec
 eval env (S.Pair t1 t2) = do
   v1 <- eval env t1
   v2 <- eval env t2
@@ -92,17 +92,17 @@ eval env (S.Fst t0) = do
   v0 <- eval env t0
   case v0 of
     Pair v1 v2 -> Right v1
-    _ -> Left ErrFst
+    _          -> Left ErrFst
 eval env (S.Snd t0) = do
   v0 <- eval env t0
   case v0 of
     Pair v1 v2 -> Right v2
-    _ -> Left ErrSnd
+    _          -> Left ErrSnd
 eval env (S.ProdRec t0 x1 x2 t) = do
   v0 <- eval env t0
   case v0 of
     Pair v1 v2 -> eval ((x2, v2):(x1, v1):env) t
-    _ -> Left ErrProdRec
+    _          -> Left ErrProdRec
 eval env (S.Inl t) = do
   v <- eval env t
   Right (Inl v)
@@ -114,7 +114,7 @@ eval env (S.SumRec t0 x t1 y t2) = do
   case v0 of
     Inl vx -> eval ((x,vx):env) t1
     Inr vy -> eval ((y,vy):env) t2
-    _ -> Left ErrSumRec
+    _      -> Left ErrSumRec
 eval env (S.Lam x t) =
   Right (Lam env x t)
 eval env (S.LetRec decls t) =
@@ -143,13 +143,13 @@ eval env (S.PrimIO (S.PutStr t)) = do
   v <- eval env t
   case v of
     Str s -> Right (IOs (PutStr s) [])
-    _ -> Left ErrPutStr
+    _     -> Left ErrPutStr
 eval env (S.Bind t0 x t) = do
   v0 <- eval env t0
   case v0 of
-    Pure v -> eval ((x,v):env) t
+    Pure v    -> eval ((x,v):env) t
     IOs op ks -> Right (IOs op (ks ++ [(env, x, t)]))
-    _ -> Left ErrBind
+    _         -> Left ErrBind
 eval env (S.PrimOp pt) = primop pt
   where
     primop (S.IntEq t1 t2) = do
@@ -157,51 +157,51 @@ eval env (S.PrimOp pt) = primop pt
       v2 <- eval env t2
       case (v1, v2) of
         (Int n1, Int n2) -> Right (if n1 == n2 then True else False)
-        _ -> Left ErrIntEq
+        _                -> Left ErrIntEq
     primop (S.IntLe t1 t2) = do
       v1 <- eval env t1
       v2 <- eval env t2
       case (v1, v2) of
         (Int n1, Int n2) -> Right (if n1 <= n2 then True else False)
-        _ -> Left ErrIntLe
+        _                -> Left ErrIntLe
     primop (S.IntAdd t1 t2) = do
       v1 <- eval env t1
       v2 <- eval env t2
       case (v1, v2) of
         (Int n1, Int n2) -> Right (Int (n1 + n2))
-        _ -> Left ErrIntAdd
+        _                -> Left ErrIntAdd
     primop (S.IntSub t1 t2) = do
       v1 <- eval env t1
       v2 <- eval env t2
       case (v1, v2) of
         (Int n1, Int n2) -> Right (Int (n1 - n2))
-        _ -> Left ErrIntSub
+        _                -> Left ErrIntSub
     primop (S.IntMul t1 t2) = do
       v1 <- eval env t1
       v2 <- eval env t2
       case (v1, v2) of
         (Int n1, Int n2) -> Right (Int (n1 * n2))
-        _ -> Left ErrIntMul
+        _                -> Left ErrIntMul
     primop (S.IntDiv t1 t2) = do
       v1 <- eval env t1
       v2 <- eval env t2
       case (v1, v2) of
         (Int n1, Int n2) -> Right (Int (n1 `div` n2))
-        _ -> Left ErrIntDiv
+        _                -> Left ErrIntDiv
     primop (S.IntMod t1 t2) = do
       v1 <- eval env t1
       v2 <- eval env t2
       case (v1, v2) of
         (Int n1, Int n2) -> Right (Int (n1 `mod` n2))
-        _ -> Left ErrIntMod
+        _                -> Left ErrIntMod
     primop (S.IntToStr t) = do
       v <- eval env t
       case v of
         Int n -> Right (Str (show n))
-        _ -> Left ErrIntToStr
+        _     -> Left ErrIntToStr
     primop (S.AppendStr t1 t2) = do
       v1 <- eval env t1
       v2 <- eval env t2
       case (v1, v2) of
         (Str s1, Str s2) -> Right (Str (s1 ++ s2))
-        _ -> Left ErrAppendStr
+        _                -> Left ErrAppendStr
